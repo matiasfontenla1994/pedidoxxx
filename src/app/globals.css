@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FAF8F6;
+  --foreground: #211B18;
+  --coral: #E85A47;
+  --coral-dark: #C2402E;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Onest", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #E2DAD6;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  background: white;
+}
+.input:focus {
+  outline: 2px solid #E85A47;
+  outline-offset: 1px;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes orderPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45); }
+  50%       { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+}
+
+@keyframes bellWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(-12deg); }
+  40%       { transform: rotate(12deg); }
+  60%       { transform: rotate(-8deg); }
+  80%       { transform: rotate(8deg); }
+}
