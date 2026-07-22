@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 
-export default function Home() {
-  const tenants = db
+export default async function Home() {
+  const tenants = (await db
     .prepare("SELECT slug, name, plan FROM tenants ORDER BY created_at ASC")
-    .all() as { slug: string; name: string; plan: string }[];
+    .all()) as { slug: string; name: string; plan: string }[];
 
   return (
     <main className="flex-1 flex flex-col">
@@ -14,8 +14,8 @@ export default function Home() {
             Vende mejor por WhatsApp, sin comisión
           </h1>
           <p className="text-white/90 text-lg mb-8">
-            Clon educativo de Pedix construido para esta sesión: catálogo digital, pedidos
-            organizados por WhatsApp y panel de administración.
+            Catálogo digital multi-tienda: pedidos organizados por WhatsApp, turnos
+            y panel de administración.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link

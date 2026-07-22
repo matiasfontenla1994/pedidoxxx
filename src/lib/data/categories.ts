@@ -1,25 +1,31 @@
 import { db, newId, nowIso } from "@/lib/db";
 import type { Category } from "./types";
 
-export function listCategories(tenantId: string): Category[] {
-  return db
+export async function listCategories(tenantId: string): Promise<Category[]> {
+  return (await db
     .prepare("SELECT * FROM categories WHERE tenant_id = ? ORDER BY sort_order ASC, created_at ASC")
-    .all(tenantId) as unknown as Category[];
+    .all(tenantId)) as unknown as Category[];
 }
 
-export function getCategory(id: string): Category | undefined {
-  return db.prepare("SELECT * FROM categories WHERE id = ?").get(id) as unknown as Category | undefined;
+export async function getCategory(id: string): Promise<Category | undefined> {
+  return (await db.prepare("SELECT * FROM categories WHERE id = ?").get(id)) as unknown as Category | undefined;
 }
 
-export function createCategory(tenantId: string, name: string, sortOrder = 0): Category {
+export async function getCategoryByName(tenantId: string, name: string): Promise<Category | undefined> {
+  return (await db
+    .prepare("SELECT * FROM categories WHERE tenant_id = ? AND LOWER(name) = LOWER(?)")
+    .get(tenantId, name)) as unknown as Category | undefined;
+}
+
+export async function createCategory(tenantId: string, name: string, sortOrder = 0, parentId: string | null = null): Promise<Category> {
   const id = newId();
-  db.prepare(
-    `INSERT INTO categories (id, tenant_id, name, sort_order, created_at) VALUES (?, ?, ?, ?, ?)`
-  ).run(id, tenantId, name, sortOrder, nowIso());
-  return getCategory(id)!;
+  await db.prepare(
+    `INSERT INTO categories (id, tenant_id, parent_id, name, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, tenantId, parentId, name, sortOrder, nowIso());
+  return (await getCategory(id))!;
 }
 
-export function updateCategory(id: string, fields: { name?: string; sort_order?: number }) {
+export async function updateCategory(id: string, fields: { name?: string; sort_order?: number; parent_id?: string | null }) {
   const sets: string[] = [];
   const values: unknown[] = [];
   if (fields.name !== undefined) {
@@ -30,12 +36,17 @@ export function updateCategory(id: string, fields: { name?: string; sort_order?:
     sets.push("sort_order = ?");
     values.push(fields.sort_order);
   }
+  if (fields.parent_id !== undefined) {
+    sets.push("parent_id = ?");
+    values.push(fields.parent_id);
+  }
   if (sets.length === 0) return;
   values.push(id);
-  db.prepare(`UPDATE categories SET ${sets.join(", ")} WHERE id = ?`).run(...(values as []));
+  await db.prepare(`UPDATE categories SET ${sets.join(", ")} WHERE id = ?`).run(...(values as []));
 }
 
-export function deleteCategory(tenantId: string, id: string) {
-  db.prepare("DELETE FROM categories WHERE id = ? AND tenant_id = ?").run(id, tenantId);
-  db.prepare("UPDATE products SET category_id = NULL WHERE category_id = ? AND tenant_id = ?").run(id, tenantId);
+export async function deleteCategory(tenantId: string, id: string) {
+  await db.prepare("DELETE FROM categories WHERE id = ? AND tenant_id = ?").run(id, tenantId);
+  await db.prepare("UPDATE categories SET parent_id = NULL WHERE parent_id = ? AND tenant_id = ?").run(id, tenantId);
+  await db.prepare("UPDATE products SET category_id = NULL WHERE category_id = ? AND tenant_id = ?").run(id, tenantId);
 }

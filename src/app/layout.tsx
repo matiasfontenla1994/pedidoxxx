@@ -5,8 +5,8 @@ import "./globals.css";
 const onest = Onest({ subsets: ["latin"], display: "swap", variable: "--font-onest" });
 
 export const metadata: Metadata = {
-  title: "Pedix Clone — tienda online + pedidos por WhatsApp",
-  description: "Clon educativo de Pedix: catálogo digital, pedidos por WhatsApp y panel admin.",
+  title: "Catálogo Digital — tienda online + pedidos por WhatsApp",
+  description: "Catálogo digital multi-tienda: pedidos por WhatsApp, turnos y panel de administración.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

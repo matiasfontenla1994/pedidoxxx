@@ -5,9 +5,11 @@ import { getTenantById } from "@/lib/data/tenants";
 
 export async function requireAdmin() {
   const session = await getSession();
-  if (!session) redirect("/admin/login");
-  const user = getUserById(session.userId);
-  const tenant = getTenantById(session.tenantId);
+  if (!session || !session.tenantId) redirect("/admin/login");
+  const user = await getUserById(session.userId);
+  const tenant = await getTenantById(session.tenantId);
   if (!user || !tenant) redirect("/admin/login");
-  return { user, tenant };
+  const impersonating = user.role === "SUPER_ADMIN";
+  if (tenant.status === "SUSPENDED" && !impersonating) redirect("/admin/suspended");
+  return { user, tenant, impersonating };
 }

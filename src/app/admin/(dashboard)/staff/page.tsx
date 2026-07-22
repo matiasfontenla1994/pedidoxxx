@@ -1,8 +1,11 @@
 import { requireAdmin } from "@/lib/require-admin";
 import { listStaff, getStaffSchedules } from "@/lib/data/staff";
 import { createStaffAction, deleteStaffAction, upsertStaffScheduleAction, removeStaffScheduleDayAction } from "@/lib/actions/staff";
+import { getStoreBaseUrl } from "@/lib/qr";
 import DeleteButton from "../delete-button";
+import SaveButton from "../save-button";
 import StaffSlotManager from "./slot-manager";
+import StaffLinkManager from "./copy-staff-link";
 
 const DAYS: [number, string][] = [
   [0, "Lunes"],
@@ -16,7 +19,11 @@ const DAYS: [number, string][] = [
 
 export default async function StaffPage() {
   const { tenant } = await requireAdmin();
-  const staffList = listStaff(tenant.id);
+  const staffList = await listStaff(tenant.id);
+  const staffWithSchedules = await Promise.all(
+    staffList.map(async (member) => ({ member, schedules: await getStaffSchedules(member.id) }))
+  );
+  const baseUrl = await getStoreBaseUrl();
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -24,15 +31,14 @@ export default async function StaffPage() {
 
       <form action={createStaffAction} className="bg-white border rounded-2xl p-4 flex gap-2" style={{ borderColor: "#ECE6E2" }}>
         <input name="name" required placeholder="Nombre del profesional" className="input flex-1" />
-        <button className="text-white px-4 rounded-xl font-medium text-sm" style={{ background: "#E85A47" }}>Agregar</button>
+        <SaveButton className="text-white px-4 rounded-xl font-medium text-sm" style={{ background: "#E85A47" }}>Agregar</SaveButton>
       </form>
 
       {staffList.length === 0 && (
         <p className="text-sm" style={{ color: "#9C8E87" }}>Todavía no agregaste personal.</p>
       )}
 
-      {staffList.map((member) => {
-        const schedules = getStaffSchedules(member.id);
+      {staffWithSchedules.map(({ member, schedules }) => {
         const scheduleByDay = Object.fromEntries(schedules.map((s) => [s.day_of_week, s]));
 
         return (
@@ -41,6 +47,20 @@ export default async function StaffPage() {
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "#ECE6E2" }}>
               <h2 className="font-semibold" style={{ color: "#211B18" }}>{member.name}</h2>
               <DeleteButton action={deleteStaffAction} id={member.id} />
+            </div>
+
+            {/* ── Link exclusivo para que el profesional lo comparta con sus propios clientes ── */}
+            <div className="px-4 py-3 border-b space-y-1" style={{ borderColor: "#ECE6E2" }}>
+              <p className="text-xs font-medium" style={{ color: "#6E635E" }}>
+                Link exclusivo de {member.name} (muestra solo su disponibilidad) — vos elegís el texto del link
+              </p>
+              <StaffLinkManager
+                key={member.link_slug}
+                baseUrl={baseUrl}
+                tenantSlug={tenant.slug}
+                staffId={member.id}
+                initialLinkSlug={member.link_slug ?? ""}
+              />
             </div>
 
             {/* ── Slot manager FIRST (most used feature) ── */}

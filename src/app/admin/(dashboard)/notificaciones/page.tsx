@@ -23,9 +23,9 @@ export default async function NotificacionesPage() {
   const { tenant } = await requireAdmin();
 
   // Mark all as seen on page load
-  markAllOrdersSeen(tenant.id);
+  await markAllOrdersSeen(tenant.id);
 
-  const orders = listOrders(tenant.id).slice(0, 50);
+  const orders = (await listOrders(tenant.id)).slice(0, 50);
   const hasUnseen = orders.some((o) => o.seen === 0);
 
   return (

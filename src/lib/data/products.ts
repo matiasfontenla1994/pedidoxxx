@@ -1,21 +1,21 @@
 import { db, newId, nowIso } from "@/lib/db";
 import type { Product } from "./types";
 
-export function listProducts(tenantId: string, opts: { onlyActive?: boolean } = {}): Product[] {
+export async function listProducts(tenantId: string, opts: { onlyActive?: boolean } = {}): Promise<Product[]> {
   if (opts.onlyActive) {
-    return db
+    return (await db
       .prepare(
         "SELECT * FROM products WHERE tenant_id = ? AND active = 1 ORDER BY sort_order ASC, created_at ASC"
       )
-      .all(tenantId) as unknown as Product[];
+      .all(tenantId)) as unknown as Product[];
   }
-  return db
+  return (await db
     .prepare("SELECT * FROM products WHERE tenant_id = ? ORDER BY sort_order ASC, created_at ASC")
-    .all(tenantId) as unknown as Product[];
+    .all(tenantId)) as unknown as Product[];
 }
 
-export function getProduct(id: string): Product | undefined {
-  return db.prepare("SELECT * FROM products WHERE id = ?").get(id) as unknown as Product | undefined;
+export async function getProduct(id: string): Promise<Product | undefined> {
+  return (await db.prepare("SELECT * FROM products WHERE id = ?").get(id)) as unknown as Product | undefined;
 }
 
 export interface ProductInput {
@@ -28,14 +28,15 @@ export interface ProductInput {
   stock?: number | null;
   active?: boolean;
   isService?: boolean;
+  featured?: boolean;
   sortOrder?: number;
   optionsJson?: string;
 }
 
-export function createProduct(tenantId: string, input: ProductInput): Product {
+export async function createProduct(tenantId: string, input: ProductInput): Promise<Product> {
   const id = newId();
   const ts = nowIso();
-  db.prepare(
+  await db.prepare(
     `INSERT INTO products
       (id, tenant_id, category_id, name, description, price, images_json, sku, stock, active, is_service, sort_order, options_json, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -56,10 +57,10 @@ export function createProduct(tenantId: string, input: ProductInput): Product {
     ts,
     ts
   );
-  return getProduct(id)!;
+  return (await getProduct(id))!;
 }
 
-export function updateProduct(tenantId: string, id: string, input: Partial<ProductInput>) {
+export async function updateProduct(tenantId: string, id: string, input: Partial<ProductInput>) {
   const map: Record<string, unknown> = {};
   if (input.categoryId !== undefined) map.category_id = input.categoryId;
   if (input.name !== undefined) map.name = input.name;
@@ -70,6 +71,7 @@ export function updateProduct(tenantId: string, id: string, input: Partial<Produ
   if (input.stock !== undefined) map.stock = input.stock;
   if (input.active !== undefined) map.active = input.active ? 1 : 0;
   if (input.isService !== undefined) map.is_service = input.isService ? 1 : 0;
+  if (input.featured !== undefined) map.featured = input.featured ? 1 : 0;
   if (input.sortOrder !== undefined) map.sort_order = input.sortOrder;
   if (input.optionsJson !== undefined) map.options_json = input.optionsJson;
   const keys = Object.keys(map);
@@ -80,9 +82,9 @@ export function updateProduct(tenantId: string, id: string, input: Partial<Produ
   values.push(nowIso());
   values.push(id);
   values.push(tenantId);
-  db.prepare(`UPDATE products SET ${sets.join(", ")} WHERE id = ? AND tenant_id = ?`).run(...(values as []));
+  await db.prepare(`UPDATE products SET ${sets.join(", ")} WHERE id = ? AND tenant_id = ?`).run(...(values as []));
 }
 
-export function deleteProduct(tenantId: string, id: string) {
-  db.prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?").run(id, tenantId);
+export async function deleteProduct(tenantId: string, id: string) {
+  await db.prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?").run(id, tenantId);
 }

@@ -3,13 +3,13 @@ import type { Appointment } from "./types";
 import { getStaffSchedules } from "./staff";
 import { getBlockedSlotTimes } from "./blocked-slots";
 
-export function getAvailableSlots(staffId: string, date: string): string[] {
+export async function getAvailableSlots(staffId: string, date: string): Promise<string[]> {
   // date: YYYY-MM-DD
   const jsDay = new Date(date + "T12:00:00").getDay(); // 0=Sun, 1=Mon...
   // Convert to our convention: 0=Mon ... 6=Sun
   const ourDay = jsDay === 0 ? 6 : jsDay - 1;
 
-  const schedules = getStaffSchedules(staffId);
+  const schedules = await getStaffSchedules(staffId);
   const daySchedule = schedules.find((s) => s.day_of_week === ourDay);
   if (!daySchedule) return [];
 
@@ -25,16 +25,16 @@ export function getAvailableSlots(staffId: string, date: string): string[] {
     allSlots.push(`${h}:${min}`);
   }
 
-  const booked = db
+  const booked = (await db
     .prepare("SELECT time FROM appointments WHERE staff_id = ? AND date = ? AND status = 'CONFIRMED'")
-    .all(staffId, date) as { time: string }[];
-  const blocked = getBlockedSlotTimes(staffId, date);
+    .all(staffId, date)) as { time: string }[];
+  const blocked = await getBlockedSlotTimes(staffId, date);
   const unavailable = new Set([...booked.map((b) => b.time), ...blocked]);
 
   return allSlots.filter((s) => !unavailable.has(s));
 }
 
-export function createAppointment(input: {
+export async function createAppointment(input: {
   tenantId: string;
   staffId: string;
   orderId: string;
@@ -42,17 +42,17 @@ export function createAppointment(input: {
   date: string;
   time: string;
   durationMinutes?: number;
-}): Appointment {
+}): Promise<Appointment> {
   const id = newId();
-  db.prepare(
+  await db.prepare(
     `INSERT INTO appointments (id, tenant_id, staff_id, order_id, service_name, date, time, duration_minutes, status, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)`
   ).run(id, input.tenantId, input.staffId, input.orderId, input.serviceName, input.date, input.time, input.durationMinutes ?? 30, nowIso());
-  return db.prepare("SELECT * FROM appointments WHERE id = ?").get(id) as unknown as Appointment;
+  return (await db.prepare("SELECT * FROM appointments WHERE id = ?").get(id)) as unknown as Appointment;
 }
 
-export function listAppointments(tenantId: string): Appointment[] {
-  return db
+export async function listAppointments(tenantId: string): Promise<Appointment[]> {
+  return (await db
     .prepare("SELECT * FROM appointments WHERE tenant_id = ? ORDER BY date ASC, time ASC")
-    .all(tenantId) as unknown as Appointment[];
+    .all(tenantId)) as unknown as Appointment[];
 }

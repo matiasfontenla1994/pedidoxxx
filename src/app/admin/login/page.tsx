@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { loginAction } from "@/lib/actions/auth";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, undefined);
 
@@ -15,11 +17,11 @@ export default function LoginPage() {
         </div>
         <label className="block">
           <span className="text-sm font-medium block mb-1">Email</span>
-          <input name="email" type="email" required className="input" defaultValue="demo@pedix-clone.test" />
+          <input name="email" type="email" required className="input" defaultValue={isDev ? "demo@catalogo-demo.test" : ""} />
         </label>
         <label className="block">
           <span className="text-sm font-medium block mb-1">Contraseña</span>
-          <input name="password" type="password" required className="input" defaultValue="demo1234" />
+          <input name="password" type="password" required className="input" defaultValue={isDev ? "demo1234" : ""} />
         </label>
         {state?.error && <p className="text-red-600 text-sm">{state.error}</p>}
         <button
@@ -29,9 +31,11 @@ export default function LoginPage() {
         >
           {pending ? "Entrando..." : "Entrar"}
         </button>
-        <p className="text-xs text-zinc-400">
-          Demo precargada: demo@pedix-clone.test / demo1234 (correr <code>npm run db:seed</code> primero)
-        </p>
+        {isDev && (
+          <p className="text-xs text-zinc-400">
+            Demo precargada: demo@catalogo-demo.test / demo1234 (correr <code>npm run db:seed</code> primero)
+          </p>
+        )}
       </form>
     </main>
   );

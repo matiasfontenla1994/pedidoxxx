@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/require-admin";
 import { logoutAction } from "@/lib/actions/auth";
+import { returnToSuperAdminAction } from "@/lib/actions/superadmin";
 import { getPlan } from "@/lib/plans";
 import { getUnseenOrderCount } from "@/lib/data/orders";
 import NewOrderWatcher from "./new-order-toast";
@@ -8,6 +9,7 @@ import NewOrderWatcher from "./new-order-toast";
 const NAV = [
   { href: "/admin/dashboard",      label: "Inicio",          icon: "⊞" },
   { href: "/admin/pedidos",         label: "Pedidos",         icon: "📋" },
+  { href: "/admin/pos",             label: "Punto de venta",  icon: "🧾" },
   { href: "/admin/productos",       label: "Productos",       icon: "📦" },
   { href: "/admin/categorias",      label: "Categorías",      icon: "🏷" },
   { href: "/admin/staff",           label: "Personal",        icon: "👥" },
@@ -17,12 +19,20 @@ const NAV = [
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, tenant } = await requireAdmin();
+  const { user, tenant, impersonating } = await requireAdmin();
   const plan = getPlan(tenant.plan);
-  const unseenCount = getUnseenOrderCount(tenant.id);
+  const unseenCount = await getUnseenOrderCount(tenant.id);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen" style={{ background: "#FAF8F6" }}>
+      {impersonating && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-white" style={{ background: "#211B18" }}>
+          <span>Estás administrando <strong>{tenant.name}</strong> como superadmin.</span>
+          <form action={returnToSuperAdminAction}>
+            <button className="underline font-medium shrink-0">Volver a superadmin</button>
+          </form>
+        </div>
+      )}
       {/* ── Top bar ── */}
       <header
         className="sticky top-0 z-40 h-12 flex items-center px-4 gap-3 shadow-sm"

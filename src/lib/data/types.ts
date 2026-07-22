@@ -12,6 +12,9 @@ export interface Tenant {
   plan: "PRINCIPIANTE" | "ESPECIALISTA" | "PRO";
   currency: string;
   delivery_fixed_cost: number;
+  pickup_enabled: number;
+  status: "ACTIVE" | "SUSPENDED";
+  plan_requested: string | null;
   open_hours_json: string;
   created_at: string;
   updated_at: string;
@@ -23,13 +26,14 @@ export interface AppUser {
   password_hash: string;
   name: string;
   role: string;
-  tenant_id: string;
+  tenant_id: string | null;
   created_at: string;
 }
 
 export interface Category {
   id: string;
   tenant_id: string;
+  parent_id: string | null;
   name: string;
   sort_order: number;
   created_at: string;
@@ -56,6 +60,7 @@ export interface Product {
   stock: number | null;
   active: number;
   is_service: number;
+  featured: number;
   sort_order: number;
   options_json: string;
   created_at: string;
@@ -67,6 +72,7 @@ export interface Staff {
   tenant_id: string;
   name: string;
   active: number;
+  link_slug: string | null;
   created_at: string;
 }
 
@@ -109,6 +115,7 @@ export interface PaymentMethod {
   tenant_id: string;
   name: string;
   adjustment_pct: number;
+  adjustment_type: "PERCENT" | "FIXED";
   active: number;
 }
 
@@ -125,17 +132,34 @@ export interface Order {
   tenant_id: string;
   customer_name: string;
   customer_phone: string;
+  customer_email: string | null;
   customer_address: string | null;
   items_json: string;
   subtotal: number;
   discount: number;
+  payment_adjustment: number;
   delivery_cost: number;
   total: number;
   payment_method: string | null;
   coupon_code: string | null;
   notes: string | null;
   status: "NEW" | "IN_PROGRESS" | "READY" | "DELIVERED" | "CANCELLED";
+  source: "WHATSAPP" | "POS";
+  promo_discount: number;
+  promo_label: string | null;
   seen: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Promotion {
+  id: string;
+  tenant_id: string;
+  name: string;
+  scope: "ALL" | "CATEGORY" | "PRODUCT";
+  scope_id: string | null;
+  buy_qty: number;
+  pay_qty: number;
+  active: number;
+  created_at: string;
 }

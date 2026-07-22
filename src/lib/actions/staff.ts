@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
-import { createStaff, deleteStaff, upsertStaffSchedule, removeStaffScheduleDay, getStaffSchedules } from "@/lib/data/staff";
+import { createStaff, deleteStaff, upsertStaffSchedule, removeStaffScheduleDay, getStaffSchedules, setStaffLinkSlug, regenerateStaffLinkSlug } from "@/lib/data/staff";
 import { addBlockedSlot, removeBlockedSlot, getBlockedSlotTimes, isSlotBlocked } from "@/lib/data/blocked-slots";
 import { db } from "@/lib/db";
 
@@ -10,13 +10,32 @@ export async function createStaffAction(formData: FormData) {
   const { tenant } = await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  createStaff(tenant.id, name);
+  await createStaff(tenant.id, name);
   revalidatePath("/admin/staff");
 }
 
 export async function deleteStaffAction(id: string) {
   const { tenant } = await requireAdmin();
-  deleteStaff(tenant.id, id);
+  await deleteStaff(tenant.id, id);
+  revalidatePath("/admin/staff");
+}
+
+export async function updateStaffLinkAction(
+  id: string,
+  _prevState: { error?: string } | undefined,
+  formData: FormData
+): Promise<{ error?: string } | undefined> {
+  const { tenant } = await requireAdmin();
+  const linkSlug = String(formData.get("linkSlug") ?? "").trim();
+  const result = await setStaffLinkSlug(tenant.id, id, linkSlug);
+  if (result.error) return result;
+  revalidatePath("/admin/staff");
+  return undefined;
+}
+
+export async function regenerateStaffLinkAction(id: string) {
+  const { tenant } = await requireAdmin();
+  await regenerateStaffLinkSlug(tenant.id, id);
   revalidatePath("/admin/staff");
 }
 
@@ -28,13 +47,13 @@ export async function upsertStaffScheduleAction(formData: FormData) {
   const endTime = String(formData.get("endTime") ?? "18:00");
   const slotMinutes = Number(formData.get("slotMinutes") ?? 30);
   if (!staffId || Number.isNaN(dayOfWeek)) return;
-  upsertStaffSchedule(staffId, tenant.id, dayOfWeek, startTime, endTime, slotMinutes);
+  await upsertStaffSchedule(staffId, tenant.id, dayOfWeek, startTime, endTime, slotMinutes);
   revalidatePath("/admin/staff");
 }
 
 export async function removeStaffScheduleDayAction(staffId: string, dayOfWeek: number) {
   const { tenant } = await requireAdmin();
-  removeStaffScheduleDay(tenant.id, staffId, dayOfWeek);
+  await removeStaffScheduleDay(tenant.id, staffId, dayOfWeek);
   revalidatePath("/admin/staff");
 }
 
@@ -47,12 +66,12 @@ export async function getStaffSlotsStatusAction(
   const { tenant } = await requireAdmin();
 
   // Verify staff belongs to this tenant
-  const member = db.prepare("SELECT id FROM staff WHERE id = ? AND tenant_id = ?").get(staffId, tenant.id);
+  const member = await db.prepare("SELECT id FROM staff WHERE id = ? AND tenant_id = ?").get(staffId, tenant.id);
   if (!member) return [];
 
   const jsDay = new Date(date + "T12:00:00").getDay();
   const ourDay = jsDay === 0 ? 6 : jsDay - 1;
-  const schedules = getStaffSchedules(staffId);
+  const schedules = await getStaffSchedules(staffId);
   const daySchedule = schedules.find((s) => s.day_of_week === ourDay);
   if (!daySchedule) return [];
 
@@ -68,11 +87,11 @@ export async function getStaffSlotsStatusAction(
     allSlots.push(`${h}:${min}`);
   }
 
-  const booked = db
+  const booked = (await db
     .prepare("SELECT time FROM appointments WHERE staff_id = ? AND date = ? AND status = 'CONFIRMED'")
-    .all(staffId, date) as { time: string }[];
+    .all(staffId, date)) as { time: string }[];
   const bookedSet = new Set(booked.map((b) => b.time));
-  const blockedTimes = new Set(getBlockedSlotTimes(staffId, date));
+  const blockedTimes = new Set(await getBlockedSlotTimes(staffId, date));
 
   return allSlots.map((time) => ({
     time,
@@ -86,12 +105,12 @@ export async function getStaffSlotsStatusAction(
 
 export async function toggleBlockedSlotAction(staffId: string, date: string, time: string) {
   const { tenant } = await requireAdmin();
-  const member = db.prepare("SELECT id FROM staff WHERE id = ? AND tenant_id = ?").get(staffId, tenant.id);
+  const member = await db.prepare("SELECT id FROM staff WHERE id = ? AND tenant_id = ?").get(staffId, tenant.id);
   if (!member) return;
 
-  if (isSlotBlocked(staffId, date, time)) {
-    removeBlockedSlot(tenant.id, staffId, date, time);
+  if (await isSlotBlocked(staffId, date, time)) {
+    await removeBlockedSlot(tenant.id, staffId, date, time);
   } else {
-    addBlockedSlot(tenant.id, staffId, date, time);
+    await addBlockedSlot(tenant.id, staffId, date, time);
   }
 }

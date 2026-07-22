@@ -1,5 +1,4 @@
-// Replica la tabla comparativa real de info.pedix.app/es/#precios
-// (ver 01_analisis_pedix.md, sección 5, para la fuente de cada límite/flag)
+// Tabla comparativa de planes: límites y funcionalidades habilitadas por plan.
 
 export type PlanId = "PRINCIPIANTE" | "ESPECIALISTA" | "PRO";
 
@@ -8,6 +7,7 @@ export interface PlanConfig {
   label: string;
   priceUsd: number;
   tagline: string;
+  maxProducts: number;
   maxImagesPerProduct: number;
   coupons: boolean;
   promotions: boolean;
@@ -34,6 +34,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     label: "Principiante",
     priceUsd: 9,
     tagline: "Profesionaliza tus ventas por WhatsApp con un sistema ordenado",
+    maxProducts: 30,
     maxImagesPerProduct: 1,
     coupons: false,
     promotions: false,
@@ -58,6 +59,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     label: "Especialista",
     priceUsd: 16,
     tagline: "Optimiza y escala tu operación de ventas con datos estratégicos",
+    maxProducts: 80,
     maxImagesPerProduct: 3,
     coupons: true,
     promotions: false,
@@ -82,6 +84,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     label: "Pro",
     priceUsd: 23,
     tagline: "Herramientas avanzadas para liderar tu mercado",
+    maxProducts: 150,
     maxImagesPerProduct: 10,
     coupons: true,
     promotions: true,

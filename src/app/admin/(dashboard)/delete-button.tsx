@@ -2,13 +2,19 @@
 
 import { useTransition } from "react";
 
-export default function DeleteButton({ action, id }: { action: (id: string) => Promise<void>; id: string }) {
+export default function DeleteButton({
+  action, id, confirmMessage = "¿Eliminar? Esta acción no se puede deshacer.",
+}: {
+  action: (id: string) => Promise<void>;
+  id: string;
+  confirmMessage?: string;
+}) {
   const [pending, startTransition] = useTransition();
   return (
     <button
       disabled={pending}
       onClick={() => {
-        if (confirm("¿Eliminar? Esta acción no se puede deshacer.")) {
+        if (confirm(confirmMessage)) {
           startTransition(() => action(id));
         }
       }}

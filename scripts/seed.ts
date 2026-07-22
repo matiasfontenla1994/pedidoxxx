@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
-import { db, newId, nowIso } from "../src/lib/db";
+import { db, pool, newId, nowIso } from "../src/lib/db";
 
 async function main() {
-  const existing = db.prepare("SELECT * FROM tenants WHERE slug = ?").get("biloba-demo");
+  const existing = await db.prepare("SELECT * FROM tenants WHERE slug = ?").get("biloba-demo");
   if (existing) {
     console.log("La tienda demo ya existe (biloba-demo). No se vuelve a crear.");
     return;
@@ -12,7 +12,7 @@ async function main() {
   const tenantId = newId();
   const ts = nowIso();
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO tenants (id, slug, name, description, primary_color, whatsapp, plan, currency, delivery_fixed_cost, open_hours_json, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
@@ -38,16 +38,16 @@ async function main() {
     ts
   );
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO users (id, email, password_hash, name, role, tenant_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(newId(), "demo@pedix-clone.test", passwordHash, "Dueño Demo", "OWNER", tenantId, ts);
+  ).run(newId(), "demo@catalogo-demo.test", passwordHash, "Dueño Demo", "OWNER", tenantId, ts);
 
   for (const pm of [
     { name: "Efectivo", adj: 0 },
     { name: "Transferencia", adj: -5 },
     { name: "Tarjeta", adj: 8 },
   ]) {
-    db.prepare(`INSERT INTO payment_methods (id, tenant_id, name, adjustment_pct) VALUES (?, ?, ?, ?)`).run(
+    await db.prepare(`INSERT INTO payment_methods (id, tenant_id, name, adjustment_pct) VALUES (?, ?, ?, ?)`).run(
       newId(),
       tenantId,
       pm.name,
@@ -59,7 +59,7 @@ async function main() {
     { name: "Centro", cost: 2 },
     { name: "Zona norte", cost: 4 },
   ]) {
-    db.prepare(`INSERT INTO delivery_zones (id, tenant_id, name, cost) VALUES (?, ?, ?, ?)`).run(
+    await db.prepare(`INSERT INTO delivery_zones (id, tenant_id, name, cost) VALUES (?, ?, ?, ?)`).run(
       newId(),
       tenantId,
       z.name,
@@ -67,20 +67,20 @@ async function main() {
     );
   }
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO coupons (id, tenant_id, code, type, value, created_at) VALUES (?, ?, ?, ?, ?, ?)`
   ).run(newId(), tenantId, "BIENVENIDA10", "PERCENT", 10, ts);
 
   const catAlmacenId = newId();
   const catFrescosId = newId();
-  db.prepare(`INSERT INTO categories (id, tenant_id, name, sort_order, created_at) VALUES (?, ?, ?, ?, ?)`).run(
+  await db.prepare(`INSERT INTO categories (id, tenant_id, name, sort_order, created_at) VALUES (?, ?, ?, ?, ?)`).run(
     catAlmacenId,
     tenantId,
     "Almacén",
     0,
     ts
   );
-  db.prepare(`INSERT INTO categories (id, tenant_id, name, sort_order, created_at) VALUES (?, ?, ?, ?, ?)`).run(
+  await db.prepare(`INSERT INTO categories (id, tenant_id, name, sort_order, created_at) VALUES (?, ?, ?, ?, ?)`).run(
     catFrescosId,
     tenantId,
     "Frescos",
@@ -128,7 +128,7 @@ async function main() {
 
   let order = 0;
   for (const p of products) {
-    db.prepare(
+    await db.prepare(
       `INSERT INTO products (id, tenant_id, category_id, name, description, price, images_json, sku, stock, active, sort_order, options_json, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, '[]', ?, ?, 1, ?, ?, ?, ?)`
     ).run(newId(), tenantId, p.categoryId, p.name, p.description, p.price, p.sku, p.stock, order++, p.optionsJson, ts, ts);
@@ -136,7 +136,12 @@ async function main() {
 
   console.log("Seed OK.");
   console.log("Tienda demo: /biloba-demo");
-  console.log("Login admin: demo@pedix-clone.test / demo1234");
+  console.log("Login admin: demo@catalogo-demo.test / demo1234");
 }
 
-main();
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(() => pool.end());
