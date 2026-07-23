@@ -227,6 +227,24 @@ CREATE TABLE IF NOT EXISTS promotions (
   active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id TEXT PRIMARY KEY,
+  actor_user_id TEXT,
+  actor_email TEXT NOT NULL,
+  tenant_id TEXT,
+  tenant_name TEXT,
+  action TEXT NOT NULL,
+  details TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  success INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
   `);
 
   // Columnas agregadas en iteraciones posteriores
@@ -264,6 +282,8 @@ CREATE TABLE IF NOT EXISTS promotions (
     CREATE INDEX IF NOT EXISTS idx_staff_tenant ON staff(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_appointments_tenant ON appointments(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_promotions_tenant ON promotions(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_login_attempts_email_created ON login_attempts(email, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_staff_schedules_staff ON staff_schedules(staff_id);
     CREATE INDEX IF NOT EXISTS idx_blocked_slots_staff_date ON blocked_slots(staff_id, date);
   `);

@@ -2,6 +2,7 @@
 // Uso: npx tsx scripts/create-superadmin.ts --email=vos@tudominio.com --password=algoSeguro --name="Tu Nombre"
 import bcrypt from "bcryptjs";
 import { db, pool, newId, nowIso } from "../src/lib/db";
+import { validatePassword } from "../src/lib/password-policy";
 
 function parseArgs() {
   const args: Record<string, string> = {};
@@ -27,6 +28,12 @@ async function main() {
 
   if (await db.prepare("SELECT id FROM users WHERE email = ?").get(email)) {
     console.error(`Ya existe un usuario con el email "${email}".`);
+    process.exit(1);
+  }
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    console.error(passwordError);
     process.exit(1);
   }
 

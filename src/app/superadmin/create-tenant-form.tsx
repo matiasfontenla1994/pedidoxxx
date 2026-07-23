@@ -45,7 +45,7 @@ export default function CreateTenantForm() {
         <div className="grid grid-cols-2 gap-3">
           <input name="ownerName" placeholder="Nombre del dueño" className="input col-span-2" />
           <input name="ownerEmail" type="email" required placeholder="Email de acceso" className="input col-span-2" />
-          <input name="ownerPassword" type="password" required placeholder="Contraseña" className="input col-span-2" />
+          <input name="ownerPassword" type="password" required minLength={8} placeholder="Contraseña (mínimo 8 caracteres)" className="input col-span-2" />
         </div>
       </div>
 

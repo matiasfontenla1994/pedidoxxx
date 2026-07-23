@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSuperAdmin } from "@/lib/require-superadmin";
 import { listTenants } from "@/lib/data/tenants";
 import { getTenantOwnerEmail } from "@/lib/data/users";
@@ -24,9 +25,14 @@ export default async function SuperAdminPage() {
           <h1 className="font-bold" style={{ color: "#211B18" }}>Superadmin</h1>
           <p className="text-xs" style={{ color: "#9C8E87" }}>{user.name} · {user.email}</p>
         </div>
-        <form action={superAdminLogoutAction}>
-          <button className="text-sm" style={{ color: "#9C8E87" }}>Cerrar sesión</button>
-        </form>
+        <div className="flex items-center gap-4">
+          <Link href="/superadmin/auditoria" className="text-sm font-medium" style={{ color: "#E85A47" }}>
+            Auditoría
+          </Link>
+          <form action={superAdminLogoutAction}>
+            <button className="text-sm" style={{ color: "#9C8E87" }}>Cerrar sesión</button>
+          </form>
+        </div>
       </header>
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">

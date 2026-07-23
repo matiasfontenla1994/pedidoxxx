@@ -45,3 +45,5 @@ next-env.d.ts
 
 # script de uso único, específico de esta máquina, con contraseña local hardcodeada
 /scripts/reset-postgres-password.ps1
+
+.vercel

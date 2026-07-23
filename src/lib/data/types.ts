@@ -152,6 +152,17 @@ export interface Order {
   updated_at: string;
 }
 
+export interface AuditLogEntry {
+  id: string;
+  actor_user_id: string | null;
+  actor_email: string;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  action: string;
+  details: string | null;
+  created_at: string;
+}
+
 export interface Promotion {
   id: string;
   tenant_id: string;
